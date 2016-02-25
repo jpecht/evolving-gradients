@@ -27,9 +27,10 @@ color magenta = color(83, 9, 91);
 color pink = color(111, 9, 67);
 
 // how often color change is occurring
-float numSecPerChange = 1;
-int secondsPassed = 0;
+float numSecPerChange = 0.2;
+float secondsPassed = 0;
 boolean triggerChange = false;
+float timeChangeOne = 100;
 
 
 void setup() {
@@ -41,13 +42,7 @@ void setup() {
     for (int j = 0; j < height; j++) {
       int k = j*width + i;
       float[] rectDim = getRectDim(i, j);
-      if (rectDim[0] == 1) {
-        pixels[k] = lerpColor(red, pink, rectDim[2]);
-      } else if (rectDim[0] == 2) {
-        pixels[k] = lerpColor(blue, magenta, rectDim[2]);
-      } else if (rectDim[0] == 3) {
-        pixels[k] = lerpColor(purple, pink, rectDim[2]);
-      }
+      pixels[k] = getRectColor(rectDim[0], rectDim[1], rectDim[2], 0);
     }
   }
   updatePixels();
@@ -71,13 +66,9 @@ void draw() {
       for (int i = 0; i < width; i++) {
         int k = j*width + i;
         float[] rectDim = getRectDim(i, j);
-        if (rectDim[0] == 1) {
-          pixels[k] = lerpColor(pixels[k], lerpColor(blue, darkGreen, rectDim[2]), rectDim[1]);
-        } else if (rectDim[0] == 2) {
-          pixels[k] = lerpColor(pixels[k], lerpColor(yellow, brown, rectDim[2]), rectDim[1]);
-        } else if (rectDim[0] == 3) {
-          pixels[k] = lerpColor(pixels[k], lerpColor(mustard, magenta, rectDim[2]), rectDim[1]);
-        }
+        color oldColor = getRectColor(rectDim[0], rectDim[1], rectDim[2], 0);
+        color newColor = getRectColor(rectDim[0], rectDim[1], rectDim[2], 1);
+        pixels[k] = lerpColor(oldColor, newColor, secondsPassed/timeChangeOne);
       }
     }
     updatePixels();
@@ -100,32 +91,16 @@ float[] getRectDim(int x, int y) {
   return returnArray;
 }
 
-
-
-/* ---------------------------- Unused Functions -------------------------- */
-color transitionGradient(color a1, color a2, color b1, color b2, float duration, float time, float x, float y) {
-  float distance = sqrt(sq(x) + sq(y)) / sqrt(2);
-  color startColor = lerpColor(a1, a2, distance);
-  color endColor = lerpColor(b1, b2, distance);
-  return lerpColor(startColor, endColor, time/duration);
-}
-
-void setGradient(float x, float y, float w, float h, color c1, color c2, int axis ) {
-  noFill();
-
-  if (axis == Y_AXIS) {  // Top to bottom gradient
-    for (float i = y; i <= y+h; i++) {
-      float inter = map(i, y, y+h, 0, 1);      
-      color c = lerpColor(c1, c2, inter);
-      stroke(c);
-      line(x, i, x+w, i);
-    }
-  } else if (axis == X_AXIS) {  // Left to right gradient
-    for (float i = x; i <= x+w; i++) {
-      float inter = map(i, x, x+w, 0, 1);
-      color c = lerpColor(c1, c2, inter);
-      stroke(c);
-      line(i, y, i, y+h);
-    }
+color getRectColor(float rectNum, float xPerc, float yPerc, int state) {
+  if (rectNum == 1) {
+    if (state == 0) return lerpColor(red, pink, yPerc);
+    else if (state == 1) return lerpColor(blue, darkGreen, xPerc);   
+  } else if (rectNum == 2) {
+    if (state == 0) return lerpColor(blue, magenta, yPerc);
+    else if (state == 1) return lerpColor(yellow, blue, xPerc);
+  } else if (rectNum == 3) {
+    if (state == 0) return lerpColor(purple, pink, yPerc);
+    else if (state == 1) return lerpColor(mustard, magenta, xPerc);
   }
+  return color(0, 0, 0);
 }
