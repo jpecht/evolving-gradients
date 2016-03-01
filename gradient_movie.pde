@@ -1,4 +1,6 @@
-// Constants //<>//
+import java.util.ArrayList; //<>//
+
+// Constants
 int Y_AXIS = 1;
 int X_AXIS = 2;
 
@@ -9,6 +11,14 @@ float rectTwoX = 0, rectTwoY = 300;
 float rectTwoWidth = 1300, rectTwoHeight = 400;
 float rectThrX = 0, rectThrY = 700;
 float rectThrWidth = 1300, rectThrHeight = 300;
+int numRectStates = 7;
+
+// line dimensions
+int[][][] lineDimCollection;
+int lineStates = 20;
+int maxLines = 5;
+int maxLineDistance = 50;
+color lineColor = color(50, 50, 50);
 
 // colors from 0 to 7: red, orange, yellow, green, cyan, blue, purple
 color[] lightestColors = {color(255,170,170), color(255,219,170), color(255,240,170), color(232,246,164), color(136,204,136), color(113,142,164), color(136,124,175), color(166,111,166)};
@@ -18,22 +28,24 @@ color[] darkColors = {color(128,21,21), color(128,82,21), color(128,109,21), col
 color[] darkestColors = {color(85,0,0), color(85,49,0), color(85,70,0), color(68,82,0), color(0,68,0), color(4,32,55), color(19,7,58), color(55,0,55)};
 
 // how often color change is occurring
-float dt = 0.2;
-float[] startTimes = {50, 100, 150, 200, 250, 300};
+float dt = 0.2; // increase dt to make animation go faster
+float phaseDuration = 50;
 float seconds = 0;
 boolean triggerChange = false;
 
 
 void setup() {
-  size(1300, 1000);
+  //size(1300, 1000);
+  fullScreen();
+  
+  createLineDimensions(lineStates, maxLines);
 
   // set initial rectangle colors
   loadPixels();
   for (int i = 0; i < width; i++) {
     for (int j = 0; j < height; j++) {
       int k = j*width + i;
-      float[] rectDim = getRectDim(i, j);
-      pixels[k] = getRectColor(rectDim[0], rectDim[1], rectDim[2], 0);
+      pixels[k] = getBackgroundColor(i, j, 0);
     }
   }
   updatePixels();
@@ -53,28 +65,57 @@ void draw() {
     println(seconds);
     
     // calculate current color change state step
-    int currState = startTimes.length - 1;
-    for (int k = 0; k < startTimes.length; k++) {
-      if (seconds < startTimes[k]) {
-        currState = k;
-        break;
-      }
-    }
-    float timePerc = 0;
-    if (currState == 0) timePerc = seconds / startTimes[0];
-    else timePerc = (seconds - startTimes[currState-1]) / (startTimes[currState] - startTimes[currState-1]);
+    int currState = floor(seconds / phaseDuration);
+    if (currState >= numRectStates) currState = numRectStates - 1;
     
-    // change the colors
+    // calculate interpolation coefficient for color
+    float timePerc = (seconds % phaseDuration) / phaseDuration;
+    
     loadPixels();
+    
+    // paint background
     for (int j = 0; j < height; j++) {
       for (int i = 0; i < width; i++) {
         int k = j*width + i;
         float[] rectDim = getRectDim(i, j);
-        color oldColor = getRectColor(rectDim[0], rectDim[1], rectDim[2], currState);
-        color newColor = getRectColor(rectDim[0], rectDim[1], rectDim[2], currState + 1);
+        color oldColor = getBackgroundColor(i, j, currState);
+        color newColor = getBackgroundColor(i, j, currState + 1);
         pixels[k] = lerpColor(oldColor, newColor, timePerc);
       }
     }
+    
+    // paint the lines
+    float lineTimePerc = cos(2*PI*seconds/phaseDuration);
+    int[][] allLineDims = lineDimCollection[currState % maxLines];
+    for (int l = 0; l < allLineDims.length; l++) {
+      int[] lineDims = allLineDims[l];
+      if (lineDims[0] == X_AXIS) {
+        for (int i = 0; i < width; i++) {
+          int k = lineDims[1]*width + i;
+          
+          // get next state color
+          color newColor = getBackgroundColor(i, lineDims[1], currState + 1);
+          
+          // change color to incorporate line
+          color transColor = lerpColor(lineColor, newColor, lineTimePerc); 
+          pixels[k] = transColor;
+          pixels[k + width*lineDims[2]] = transColor;
+        }
+      } else if (lineDims[0] == Y_AXIS) {
+        for (int j = 0; j < height; j++) {
+          int k = j*width + lineDims[1];
+          
+          // get next state color
+          color newColor = getBackgroundColor(lineDims[1], j, currState + 1);
+          
+          // change color to incorporate line
+          color transColor = lerpColor(lineColor, newColor, lineTimePerc); 
+          pixels[k] = transColor;
+          pixels[k + lineDims[2]] = transColor;
+        }
+      }
+    }
+    
     updatePixels();
     
     // reset trigger change
@@ -83,7 +124,11 @@ void draw() {
 }
 
 /* -------------------------------------- Getter Functions ---------------------------------- */
-color getRectColor(float rectNum, float xPerc, float yPerc, int state) {
+color getBackgroundColor(int x, int y, int state) {
+  float[] rectDim = getRectDim(x, y);
+  float rectNum = rectDim[0];
+  float xPerc = rectDim[1];
+  float yPerc = rectDim[2];
   if (rectNum == 1) {
     if (state == 0) return lerpColor(lightestColors[0], darkestColors[0], yPerc);
     else if (state == 1) return lerpColor(lightestColors[1], darkestColors[1], xPerc);
@@ -129,4 +174,21 @@ float[] getRectDim(int x, int y) {
   }
   float[] returnArray = {rectNum, xPerc, yPerc};
   return returnArray;
+}
+
+void createLineDimensions(int numStates, int maxLines) {
+  lineDimCollection = new int[numStates][maxLines][3]; // axis, coordinate, distance
+  for (int i = 0; i < numStates; i++) {
+    for (int j = 0; j < maxLines; j++) {
+      int axis = int(random(2)) + 1;
+      lineDimCollection[i][j][0] = axis;
+      if (axis == X_AXIS) {
+        int coord = int(random(height - maxLineDistance));
+        lineDimCollection[i][j][1] = coord;
+      } else if (axis == Y_AXIS) {
+        lineDimCollection[i][j][1] = int(random(width - maxLineDistance));
+      }
+      lineDimCollection[i][j][2] = int(random(maxLineDistance));
+    }
+  }
 }
