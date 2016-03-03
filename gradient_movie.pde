@@ -1,6 +1,4 @@
-import java.util.ArrayList; //<>//
-
-// Constants
+// Constants //<>//
 int Y_AXIS = 1;
 int X_AXIS = 2;
 
@@ -17,7 +15,8 @@ int numRectStates = 7;
 int[][][] lineDimCollection;
 int lineStates = 20;
 int maxLines = 5;
-int maxLineDistance = 50;
+int minLineDistance = 10, maxLineDistance = 50;
+int maxLineMoveDistance = 10;
 color lineColor = color(50, 50, 50);
 
 // shape dimensions
@@ -45,8 +44,8 @@ boolean triggerChange = false;
 
 
 void setup() {
-  size(1300, 1000);
-  //fullScreen();
+  //size(1300, 1000);
+  fullScreen();
   
   createLineDimensions(lineStates, maxLines);
   createShapeDimensions(shapeStates, maxShapes);
@@ -76,7 +75,6 @@ void draw() {
     // calculate current color change state step
     int currState = floor(seconds / phaseDuration);
     if (currState >= numRectStates) currState = numRectStates - 1;
-    println("--------- State " + currState + " -------------");
     
     // calculate interpolation coefficient for color
     float timePerc = (seconds % phaseDuration) / phaseDuration;
@@ -94,52 +92,29 @@ void draw() {
     }
     
     // paint the lines
-    float lineTimePerc = 1 - cos(2*PI*seconds/phaseDuration);
-    println(lineTimePerc);
-    int[][] allLineDims = lineDimCollection[currState % maxLines];
+    float sTimePerc = 0.5 + 0.5*cos(PI*seconds/phaseDuration);
+    int[][] allLineDims = lineDimCollection[ceil(float((currState % maxLines)/2))];
     for (int l = 0; l < allLineDims.length; l++) {
       int[] lineDims = allLineDims[l];
       if (lineDims[0] == X_AXIS) {
         for (int i = 0; i < width; i++) {
-          int k = lineDims[1]*width + i;
-          
-          // interpolate colors
-          color transColor;
-          if (lineTimePerc < 1) {
-            color oldColor = getBackgroundColor(i, lineDims[1], currState);
-            transColor = lerpColor(oldColor, lineColor, lineTimePerc);
-          } else {
-            color newColor = getBackgroundColor(i, lineDims[1], currState + 1);
-            transColor = lerpColor(lineColor, newColor, lineTimePerc - 1);
-          }
-          
-          // change color to incorporate line
-          pixels[k] = transColor;
+          int k = (lineDims[1])*width + i;
+          color transColor = lerpColor(pixels[k], lineColor, sTimePerc);
+          pixels[k - int((1-sTimePerc)*lineDims[3])*width] = transColor;
           pixels[k + width*lineDims[2]] = transColor;
         }
       } else if (lineDims[0] == Y_AXIS) {
         for (int j = 0; j < height; j++) {
-          int k = j*width + lineDims[1];
-          
-          // interpolate colors
-          color transColor;
-          if (lineTimePerc < 1) {
-            color oldColor = getBackgroundColor(lineDims[1], j, currState);
-            transColor = lerpColor(oldColor, lineColor, lineTimePerc);
-          } else {
-            color newColor = getBackgroundColor(lineDims[1], j, currState + 1);
-            transColor = lerpColor(lineColor, newColor, lineTimePerc - 1);
-          }
-          
-          // change color to incorporate line
-          pixels[k] = transColor;
+          int k = j*width + lineDims[1];          
+          color transColor = lerpColor(pixels[k], lineColor, sTimePerc);          
+          pixels[k - int((1-sTimePerc)*lineDims[3])] = transColor;
           pixels[k + lineDims[2]] = transColor;
         }
       }
     }
     
     // paint the shapes
-    int[][] allShapeDims = shapeDimCollection[currState % maxShapes];
+    int[][] allShapeDims = shapeDimCollection[ceil(float(currState % maxShapes)/2)];
     for (int l = 0; l < allShapeDims.length; l++) {
       int[] shapeDims = allShapeDims[l];
       String shapeType = shapeTypes[shapeDims[0]];
@@ -147,13 +122,16 @@ void draw() {
         int radius = shapeDims[3] / 2;
         int cx = shapeDims[1] + radius;
         int cy = shapeDims[2] + radius;
-        for (int deg = 0; deg < 360; deg++) {
-          int x = int(cx + radius * cos(deg));
+        color shapeColor = lowtemp[shapeDims[4]];
+        
+        for (float deg = 90; deg < 270; deg += 0.25) {
+          int x1 = int(cx + radius * cos(deg));
+          int x2 = int(cx + radius * abs(cos(deg)));
           int y = int(cy + radius * sin(deg));
-          int k = y*width + x;
-          
-          color newColor = getBackgroundColor(x, y, currState + 1);
-          pixels[k] = lerpColor(lineColor, newColor, lineTimePerc);
+          for (int x = x1; x <= x2; x++) {
+            int k = y*width + x;
+            pixels[k] = lerpColor(pixels[k], shapeColor, sTimePerc);
+          }
         }
       } else if (shapeType == "square") {
         int x = shapeDims[1];
@@ -163,17 +141,8 @@ void draw() {
         for (int dx = 0; dx < dim; dx++) {
           for (int dy = 0; dy < dim; dy++) {
             // interpolate colors
-            color transColor;
-            if (lineTimePerc < 1) {
-              color oldColor = getBackgroundColor(x+dx, y+dy, currState);
-              transColor = lerpColor(oldColor, shapeColor, lineTimePerc);
-            } else {
-              color newColor = getBackgroundColor(x+dx, y+dy, currState + 1);
-              transColor = lerpColor(shapeColor, newColor, lineTimePerc - 1);
-            }
-
-            int k = (y+dy) * width + (x+dx);
-            pixels[k] = transColor;
+            int k = (y+dy)*width + (x+dx);
+            pixels[k] = lerpColor(pixels[k], shapeColor, sTimePerc);
           }
         }
       }
@@ -194,25 +163,25 @@ color getBackgroundColor(int x, int y, int state) {
   float yPerc = rectDim[2];
   if (rectNum == 1) {
     if (state == 0) return lerpColor(lightestColors[0], darkestColors[0], yPerc);
-    else if (state == 1) return lerpColor(lightestColors[1], darkestColors[1], yPerc);
+    else if (state == 1) return lerpColor(medColors[2], lightestColors[2], yPerc);
     else if (state == 2) return lerpColor(lightestColors[2], darkestColors[3], yPerc);
-    else if (state == 3) return lerpColor(lightColors[2], darkColors[3], yPerc);
+    else if (state == 3) return lerpColor(lightColors[2], lightestColors[3], yPerc);
     else if (state == 4) return lerpColor(lightestColors[2], medColors[3], yPerc);
     else if (state == 5) return lerpColor(lightestColors[5], lightColors[4], yPerc);
     else if (state == 6) return lerpColor(lightColors[6], medColors[3], yPerc);
   } else if (rectNum == 2) {
     if (state == 0) return lerpColor(darkestColors[0], lightestColors[4], yPerc);
-    else if (state == 1) return lerpColor(darkestColors[3], lightestColors[3], yPerc);
+    else if (state == 1) return lerpColor(lightestColors[2], lightColors[2], yPerc);
     else if (state == 2) return lerpColor(darkestColors[3], lightColors[4], yPerc);
-    else if (state == 3) return lerpColor(darkColors[3], medColors[3], yPerc);
+    else if (state == 3) return lerpColor(lightestColors[3], lightColors[3], yPerc);
     else if (state == 4) return lerpColor(medColors[3], darkColors[3], yPerc);
     else if (state == 5) return lerpColor(lightColors[4], medColors[3], yPerc);
     else if (state == 6) return lerpColor(medColors[3], darkColors[2], yPerc);
   } else if (rectNum == 3) {
     if (state == 0) return lerpColor(lightestColors[4], darkestColors[5], yPerc);
-    else if (state == 1) return lerpColor(lightestColors[6], darkestColors[6], yPerc); 
+    else if (state == 1) return lerpColor(lightColors[2], lightestColors[2], yPerc); 
     else if (state == 2) return lerpColor(lightColors[4], darkestColors[0], yPerc);
-    else if (state == 3) return lerpColor(medColors[3], darkColors[3], yPerc);
+    else if (state == 3) return lerpColor(lightColors[3], lightestColors[2], yPerc);
     else if (state == 4) return lerpColor(darkColors[3], darkestColors[3], yPerc);
     else if (state == 5) return lerpColor(medColors[3], darkColors[1], yPerc);
     else if (state == 6) return lerpColor(darkColors[2], darkestColors[0], yPerc);
@@ -240,19 +209,21 @@ float[] getRectDim(int x, int y) {
 }
 
 void createLineDimensions(int numStates, int maxLines) {
-  lineDimCollection = new int[numStates][maxLines][3]; // axis, coordinate, distance
+  lineDimCollection = new int[numStates][maxLines][4]; // axis, coordinate, distance, firstlinemovement
   for (int i = 0; i < numStates; i++) {
     for (int j = 0; j < maxLines; j++) {
       int axis = int(random(2)) + 1;
       lineDimCollection[i][j][0] = axis;
-      int distance = int(random(maxLineDistance));
+      int distance = int(random(minLineDistance, maxLineDistance));
+      int movement = int(random(maxLineMoveDistance));
       if (axis == X_AXIS) {
         int coord = int(random(height - distance));
         lineDimCollection[i][j][1] = coord;
       } else if (axis == Y_AXIS) {
-        lineDimCollection[i][j][1] = int(random(width - distance));
+        lineDimCollection[i][j][1] = int(movement + random(width-distance-movement));
       }
       lineDimCollection[i][j][2] = distance;
+      lineDimCollection[i][j][3] = movement;
     }
   }
 }
