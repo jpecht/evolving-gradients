@@ -1,23 +1,12 @@
-// Constants //<>//
+import java.util.Arrays; //<>//
+
+// Constants
 int Y_AXIS = 1;
 int X_AXIS = 2;
 
-// colors from 0 to 7: red, orange, yellow, green, cyan, blue, purple
-color[] lightestColors = {color(255,170,170), color(255,219,170), color(255,240,170), color(232,246,164), color(136,204,136), color(113,142,164), color(136,124,175), color(166,111,166)};
-color[] lightColors = {color(212,106,106), color(212,167,106), color(212,194,106), color(188,205,103), color(85,170,85), color(73,109,137), color(97,81,146), color(138,69,138)};
-color[] medColors = {color(170,57,57), color(170,121,57), color(170,151,57), color(145,164,55), color(45,136,45), color(41,80,109), color(64,48,117), color(111,37,111)};
-color[] darkColors = {color(128,21,21), color(128,82,21), color(128,109,21), color(106,123,21), color(17,102,17), color(18,54,82), color(38,23,88), color(83,14,83)};
-color[] darkestColors = {color(85,0,0), color(85,49,0), color(85,70,0), color(68,82,0), color(0,68,0), color(4,32,55), color(19,7,58), color(55,0,55)};
-
 // color palettes
 color[] lowtemp = {color(157,20,25), color(159,33,42), color(127,44,63), color(103,47,75), color(95,57,95), color(82,56,101), color(70,60,114), color(51,60,121), color(47,63,128)};
-
-// primary color palettes (d3.category20c)
-color[] primPurple = {color(117,107,177),color(158,154,200),color(188,189,220),color(218,218,235)};
-color[] primGreen = {color(49,163,84),color(116,196,118),color(161,217,155),color(199,233,192)};
-color[] primOrange = {color(230,85,13),color(253,141,60),color(253,174,107),color(253,208,162)};
-color[] primBlue = {color(49,130,189),color(107,174,214),color(158,202,225),color(198,219,239)};
-color[] primGray = {color(99,99,99),color(150,150,150),color(189,189,189),color(217,217,217)};
+color[] lowtempCool = Arrays.copyOfRange(lowtemp, 4, lowtemp.length);
 
 // secondary color palettes (d3.category20b)
 color[] secBlue = {color(57,59,121),color(82,84,163),color(107,110,207),color(156,158,222)};
@@ -26,33 +15,48 @@ color[] secYellow = {color(140,109,49),color(189,158,57),color(231,186,82),color
 color[] secRed = {color(132,60,57),color(173,73,74),color(214,97,107),color(231,150,156)};
 color[] secPurple = {color(123,65,115),color(165,81,148),color(206,109,189),color(222,158,214)};
 
+// custom color palettes (darker, grayer)
+color[] midPurple = {color(77,72,102),color(72,55,98),color(66,59,95),color(59,52,89),color(54,45,90)};
+color[] midBlue = {color(70,78,99),color(63,72,96),color(57,67,92),color(50,60,87),color(44,55,88)};
+color[] midCerulean = {color(63,84,92),color(57,80,89),color(51,76,86),color(44,71,81),color(37,70,82)};
+color[] midBlend = combineColorArrays(midCerulean, combineColorArrays(midPurple, midBlue));
+
+// custom color palettes (lighter, grayer)
+color[] lightPurple = {color(108,102,137),color(97,89,133),color(87,77,128),color(76,65,125),color(67,55,123)};
+color[] lightBlue = {color(99,108,134),color(86,98,129),color(75,88,125),color(63,79,122),color(53,71,120)}; 
+color[] lightCerulean = {color(89,115,125),color(77,109,120),color(66,103,117),color(54,97,114),color(44,93,112)};
+color[] lightBlend = combineColorArrays(lightCerulean, combineColorArrays(lightPurple, lightBlue));
+
+color[] blendColors = combineColorArrays(lowtempCool,midBlend);
+
+
 // rectangle dimensions
 float rectOneX = 0, rectOneY = 0;
-float rectOneWidth = 1300, rectOneHeight = height/3;
-float rectTwoX = 0, rectTwoY = 300;
-float rectTwoWidth = 1300, rectTwoHeight = 400;
-float rectThrX = 0, rectThrY = 700;
-float rectThrWidth = 1300, rectThrHeight = 300;
+float rectOneWidth = width, rectOneHeight = height/3;
+float rectTwoX = 0, rectTwoY = height/3;
+float rectTwoWidth = width, rectTwoHeight = height/3;
+float rectThrX = 0, rectThrY = 2*height/3;
+float rectThrWidth = width, rectThrHeight = height/3;
 
 // line dimensions
 int[][][] lineDimCollection;
-int lineStates = 20;
+int lineShapeStates = 30;
 int maxLines = 5;
-int minLineDistance = 10, maxLineDistance = 50;
+int minLineDistance = 10, maxLineDistance = 70;
 int maxLineMoveDistance = 10;
 color lineColor = color(50, 50, 50);
 
 // shape dimensions
 int[][][] shapeDimCollection;
-int shapeStates = 30;
-int maxShapes = 5;
-int maxShapeSize = 100;
+int maxShapes = 5; // number of shapes to be displayed on screen at a time
+int minShapeSize = 15, maxShapeSize = 100; // diameter of shapes
 String[] shapeTypes = {"circle", "square"};
-color[][] shapeColors = {lowtemp, secPurple, lowtemp, secYellow, lowtemp};
+color[][] shapeColors = {blendColors};
+color shapeBorderColor = color(50, 50, 50);
 
 // how often color change is occurring
 float dt = 0.2; // how often the change is processed, decrease for more resolution
-float phaseDuration = (5*60/dt); // transitions will be at every (phaseDuration*dt) seconds
+float phaseDuration = (0.25*60/dt); // transitions will be at every (phaseDuration*dt) seconds
 float seconds = 0;
 boolean triggerChange = false;
 int colorStates = 10;
@@ -69,8 +73,8 @@ void setup() {
   rectTwoY = height/3; rectThrY = 2*height/3;
   
   // pre-configure all line and shape states
-  createLineDimensions(lineStates, maxLines);
-  createShapeDimensions(shapeStates, maxShapes);
+  createLineDimensions(lineShapeStates, maxLines);
+  createShapeDimensions(lineShapeStates, maxShapes);
 
   // set initial rectangle colors
   loadPixels();
@@ -114,12 +118,13 @@ void draw() {
     }
     
     // calculate interpolation coefficient for line and shape color
+    int lineState = ceil(float(currState % lineShapeStates)/2);
     float sTimePerc = 0.5 + 0.5*cos(PI*seconds/phaseDuration);
-    println("State #" + currState + ", timePerc: " + sTimePerc);
+    println("State #" + currState + ", lineState: " + lineState + ", timePerc: " + sTimePerc);
 
     
     // paint the lines
-    int[][] allLineDims = lineDimCollection[ceil(float(currState % maxLines)/2)];
+    int[][] allLineDims = lineDimCollection[lineState];
     for (int l = 0; l < allLineDims.length; l++) {
       int[] lineDims = allLineDims[l];
       //color nowLineColor = lerpColor(lineColor, lowtemp[lineDims[4]], sTimePerc);
@@ -141,41 +146,53 @@ void draw() {
     }
     
     // paint the shapes
-    int shapeCollectionIndex = ceil(float(currState)/2) % shapeDimCollection.length;
-    int[][] allShapeDims = shapeDimCollection[shapeCollectionIndex];
+    int[][] allShapeDims = shapeDimCollection[lineState % shapeDimCollection.length];
+    color[] shapeColorPalette = shapeColors[lineState % shapeColors.length];
     for (int l = 0; l < allShapeDims.length; l++) {
       int[] shapeDims = allShapeDims[l];
-      //String shapeType = shapeTypes[shapeDims[0]];
-      String shapeType = "square";
+      String shapeType = shapeTypes[shapeDims[0]];
       if (shapeType == "circle") {
         int radius = shapeDims[3] / 2;
         int cx = shapeDims[1] + radius;
         int cy = shapeDims[2] + radius;
-        color[] shapeColorPalette = shapeColors[currState % shapeColors.length];
-        if (shapeDims[4] >= shapeColorPalette.length) shapeDims[4] = shapeColorPalette.length - 1;
-        color shapeColor = shapeColorPalette[shapeDims[4]];
         
-        for (float deg = 90; deg < 270; deg += 0.25) {
-          int x1 = int(cx + radius * cos(deg));
-          int x2 = int(cx + radius * abs(cos(deg)));
-          int y = int(cy + radius * sin(deg));
-          for (int x = x1; x <= x2; x++) {
+        for (int y = cy-radius; y <= cy+radius; y++) {
+          float dy = float(y-cy) / radius;
+          float theta = asin(dy);
+          int xr = int(radius * cos(theta));
+          for (int x = cx-xr; x <= cx+xr; x++) {
             int k = y*width + x;
-            pixels[k] = lerpColor(pixels[k], shapeColor, sTimePerc);
+            
+            // recalculate existing color (may be a line color causing lines to be in front)
+            color oldColor = getBackgroundColor(x, y, currState);
+            color newColor = getBackgroundColor(x, y, currState + 1);
+            color transColor = lerpColor(oldColor, newColor, timePerc);
+            
+            // calculate if on border
+            color shapeColor = shapeColorPalette[shapeDims[4]];
+            if (x == cx-xr || x == cx+xr) shapeColor = shapeBorderColor;
+            
+            pixels[k] = lerpColor(transColor, shapeColor, sTimePerc);
           }
         }
       } else if (shapeType == "square") {
         int x = shapeDims[1];
         int y = shapeDims[2];
         int dim = shapeDims[3];
-        color shapeColor = lowtemp[shapeDims[4]];
         for (int dx = 0; dx < dim; dx++) {
           for (int dy = 0; dy < dim; dy++) {
             // interpolate colors
             int k = (y+dy)*width + (x+dx);
+            
+            // recalculate existing color (may be a line color causing lines to be in front)
             color oldColor = getBackgroundColor(x+dx, y+dy, currState);
             color newColor = getBackgroundColor(x+dx, y+dy, currState + 1);
             color transColor = lerpColor(oldColor, newColor, timePerc);
+            
+            // calculate if on border
+            color shapeColor = shapeColorPalette[shapeDims[4]];
+            if (dx == 0 || dx == dim-1 || dy == 0 || dy == dim-1) shapeColor = shapeBorderColor;
+            
             pixels[k] = lerpColor(transColor, shapeColor, sTimePerc);
           }
         }
@@ -196,7 +213,7 @@ color getBackgroundColor(int x, int y, int state) {
   float xPerc = rectDim[1];
   float yPerc = rectDim[2];
   if (rectNum == 1) {
-    if (state == 0 || state == 10) return lerpColor(lowtemp[0], lowtemp[3], yPerc); // rough
+    if (state == 0 || state == 10) return lerpColor(lowtemp[1], lowtemp[3], yPerc); // rough
     else if (state == 1) return lerpColor(secPurple[1], secPurple[2], yPerc); // smooth
     else if (state == 2) return lerpColor(secBlue[1], secBlue[3], yPerc); // rough
     else if (state == 3) return lerpColor(secGreen[2], secGreen[3], yPerc); // smooth
@@ -224,7 +241,7 @@ color getBackgroundColor(int x, int y, int state) {
     else if (state == 3) return lerpColor(secGreen[3], secGreen[2], yPerc);
     else if (state == 4) return lerpColor(secRed[3], secRed[1], yPerc);
     else if (state == 5) return lerpColor(secRed[2], secRed[3], yPerc);
-    else if (state == 6) return lerpColor(lowtemp[2], lowtemp[0], yPerc);
+    else if (state == 6) return lerpColor(lowtemp[2], lowtemp[1], yPerc);
     else if (state == 7) return lerpColor(secPurple[1], secPurple[0], yPerc);
     else if (state == 8) return lerpColor(secGreen[2], secBlue[1], yPerc);
     else if (state == 9) return lerpColor(secRed[1], secRed[2], yPerc);
@@ -256,6 +273,7 @@ void createLineDimensions(int numStates, int maxLines) {
   for (int i = 0; i < numStates; i++) {
     for (int j = 0; j < maxLines; j++) {
       int axis = int(random(2)) + 1;
+      if (j == maxLines - 1) axis = 3 - lineDimCollection[i][0][0]; // to prevent all lines in same direction
       lineDimCollection[i][j][0] = axis;
       int distance = int(random(minLineDistance, maxLineDistance));
       int movement = int(random(maxLineMoveDistance));
@@ -277,11 +295,20 @@ void createShapeDimensions(int numStates, int maxShapes) {
   for (int i = 0; i < numStates; i++) {
     for (int j = 0; j < maxShapes; j++) {
       shapeDimCollection[i][j][0] = int(random(shapeTypes.length)); // shape type
-      int distance = int(random(maxShapeSize));
+      int distance = int(random(minShapeSize, maxShapeSize));
       shapeDimCollection[i][j][1] = int(random(width - distance));
       shapeDimCollection[i][j][2] = int(random(height - distance));
       shapeDimCollection[i][j][3] = distance;
       shapeDimCollection[i][j][4] = int(random(shapeColors[i % shapeColors.length].length));
     }
   }
+}
+
+color[] combineColorArrays(color[] array1, color[] array2) {
+  color[] resultColors = new color[array1.length + array2.length];
+  for (int i = 0; i < resultColors.length; i++) {
+    if (i < array1.length) resultColors[i] = array1[i];
+    else resultColors[i] = array2[i - array1.length];
+  }
+  return resultColors;
 }
