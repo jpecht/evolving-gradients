@@ -31,25 +31,22 @@ color[] blendColors = combineColorArrays(lowtempCool,midBlend);
 
 
 // rectangle dimensions
-float rectOneX = 0, rectOneY = 0;
-float rectOneWidth = width, rectOneHeight = height/3;
-float rectTwoX = 0, rectTwoY = height/3;
-float rectTwoWidth = width, rectTwoHeight = height/3;
-float rectThrX = 0, rectThrY = 2*height/3;
-float rectThrWidth = width, rectThrHeight = height/3;
+float rectOneX = 0, rectOneY, rectOneWidth, rectOneHeight;
+float rectTwoX = 0, rectTwoY, rectTwoWidth, rectTwoHeight;
+float rectThrX = 0, rectThrY, rectThrWidth, rectThrHeight;
 
 // line dimensions
 int[][][] lineDimCollection;
 int lineShapeStates = 30;
 int maxLines = 5;
-int minLineDistance = 10, maxLineDistance = 70;
+int minLineDistance = 10, maxLineDistance = 65;
 int maxLineMoveDistance = 10;
 color lineColor = color(50, 50, 50);
 
 // shape dimensions
 int[][][] shapeDimCollection;
 int maxShapes = 5; // number of shapes to be displayed on screen at a time
-int minShapeSize = 15, maxShapeSize = 100; // diameter of shapes
+int minShapeSize = 20, maxShapeSize = 100; // diameter of shapes
 String[] shapeTypes = {"circle", "square"};
 color[][] shapeColors = {blendColors};
 color shapeBorderColor = color(50, 50, 50);
@@ -67,10 +64,9 @@ void setup() {
   fullScreen();
   
   // set up rectangle dimensions
-  rectOneWidth = width; rectOneHeight = height/3;
-  rectTwoWidth = width; rectTwoHeight = height/3;
-  rectThrWidth = width; rectThrHeight = height/3;
-  rectTwoY = height/3; rectThrY = 2*height/3;
+  rectOneY = 0; rectOneWidth = width; rectOneHeight = height/3;
+  rectTwoY = height/3; rectTwoWidth = width; rectTwoHeight = height/3;
+  rectThrY = 2*height/3; rectThrWidth = width; rectThrHeight = height/3;
   
   // pre-configure all line and shape states
   createLineDimensions(lineShapeStates, maxLines);
@@ -231,7 +227,7 @@ color getBackgroundColor(int x, int y, int state) {
     else if (state == 4) return lerpColor(secYellow[3], secRed[3], yPerc);
     else if (state == 5) return lerpColor(secRed[1], secRed[2], yPerc);
     else if (state == 6) return lerpColor(lowtemp[4], lowtemp[2], yPerc);
-    else if (state == 7) return lerpColor(secBlue[2], secPurple[1], yPerc);
+    else if (state == 7) return lerpColor(secBlue[2], secPurple[2], yPerc);
     else if (state == 8) return lerpColor(secYellow[3], secGreen[2], yPerc);
     else if (state == 9) return lerpColor(secRed[1], secRed[1], yPerc);
   } else if (rectNum == 3) {
@@ -242,7 +238,7 @@ color getBackgroundColor(int x, int y, int state) {
     else if (state == 4) return lerpColor(secRed[3], secRed[1], yPerc);
     else if (state == 5) return lerpColor(secRed[2], secRed[3], yPerc);
     else if (state == 6) return lerpColor(lowtemp[2], lowtemp[1], yPerc);
-    else if (state == 7) return lerpColor(secPurple[1], secPurple[0], yPerc);
+    else if (state == 7) return lerpColor(secPurple[2], secPurple[1], yPerc);
     else if (state == 8) return lerpColor(secGreen[2], secBlue[1], yPerc);
     else if (state == 9) return lerpColor(secRed[1], secRed[2], yPerc);
   }
