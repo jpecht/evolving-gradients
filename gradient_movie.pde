@@ -47,13 +47,14 @@ color lineColor = color(50, 50, 50);
 int[][][] shapeDimCollection;
 int maxShapes = 5; // number of shapes to be displayed on screen at a time
 int minShapeSize = 20, maxShapeSize = 100; // diameter of shapes
+int maxShapeGrowth = 0;
 String[] shapeTypes = {"circle", "square"};
-color[][] shapeColors = {blendColors};
+color[][] shapeColors = {lowtempCool, blendColors};
 color shapeBorderColor = color(50, 50, 50);
 
 // how often color change is occurring
 float dt = 0.2; // how often the change is processed, decrease for more resolution
-float phaseDuration = (0.25*60/dt); // transitions will be at every (phaseDuration*dt) seconds
+float phaseDuration = (0.2*60/dt); // transitions will be at every (phaseDuration*dt) seconds
 float seconds = 0;
 boolean triggerChange = false;
 int colorStates = 10;
@@ -127,15 +128,17 @@ void draw() {
       if (lineDims[0] == X_AXIS) {
         for (int i = 0; i < width; i++) {
           int k = (lineDims[1])*width + i;
+          int movement = int((1-sTimePerc)*lineDims[3]);
           color transColor = lerpColor(pixels[k], lineColor, sTimePerc);
-          pixels[k - int((1-sTimePerc)*lineDims[3])*width] = transColor;
+          pixels[k - movement*width] = transColor;
           pixels[k + width*lineDims[2]] = transColor;
         }
       } else if (lineDims[0] == Y_AXIS) {
         for (int j = 0; j < height; j++) {
           int k = j*width + lineDims[1];          
-          color transColor = lerpColor(pixels[k], lineColor, sTimePerc);          
-          pixels[k - int((1-sTimePerc)*lineDims[3])] = transColor;
+          int movement = int((1-sTimePerc)*lineDims[3]);
+          color transColor = lerpColor(pixels[k], lineColor, sTimePerc);
+          pixels[k - movement] = transColor;
           pixels[k + lineDims[2]] = transColor;
         }
       }
@@ -143,15 +146,20 @@ void draw() {
     
     // paint the shapes
     int[][] allShapeDims = shapeDimCollection[lineState % shapeDimCollection.length];
+  // shapetype, x coord, y coord, distance, distance-movement, color-index, lerp-index
     color[] shapeColorPalette = shapeColors[lineState % shapeColors.length];
     for (int l = 0; l < allShapeDims.length; l++) {
       int[] shapeDims = allShapeDims[l];
       String shapeType = shapeTypes[shapeDims[0]];
+      
+      int dim = shapeDims[3];
+      float dimDistance = lerp(0, shapeDims[4], sTimePerc);
+      dim += dimDistance;
+      
       if (shapeType == "circle") {
-        int radius = shapeDims[3] / 2;
+        int radius = dim / 2;
         int cx = shapeDims[1] + radius;
         int cy = shapeDims[2] + radius;
-        
         for (int y = cy-radius; y <= cy+radius; y++) {
           float dy = float(y-cy) / radius;
           float theta = asin(dy);
@@ -165,7 +173,7 @@ void draw() {
             color transColor = lerpColor(oldColor, newColor, timePerc);
             
             // calculate if on border
-            color shapeColor = shapeColorPalette[shapeDims[4]];
+            color shapeColor = lerpColor(shapeColorPalette[shapeDims[5]], shapeColorPalette[shapeDims[5]+1], float(shapeDims[6])/100);
             if (x == cx-xr || x == cx+xr) shapeColor = shapeBorderColor;
             
             pixels[k] = lerpColor(transColor, shapeColor, sTimePerc);
@@ -174,7 +182,6 @@ void draw() {
       } else if (shapeType == "square") {
         int x = shapeDims[1];
         int y = shapeDims[2];
-        int dim = shapeDims[3];
         for (int dx = 0; dx < dim; dx++) {
           for (int dy = 0; dy < dim; dy++) {
             // interpolate colors
@@ -186,7 +193,7 @@ void draw() {
             color transColor = lerpColor(oldColor, newColor, timePerc);
             
             // calculate if on border
-            color shapeColor = shapeColorPalette[shapeDims[4]];
+            color shapeColor = lerpColor(shapeColorPalette[shapeDims[5]], shapeColorPalette[shapeDims[5]+1], float(shapeDims[6])/100);
             if (dx == 0 || dx == dim-1 || dy == 0 || dy == dim-1) shapeColor = shapeBorderColor;
             
             pixels[k] = lerpColor(transColor, shapeColor, sTimePerc);
@@ -274,9 +281,10 @@ void createLineDimensions(int numStates, int maxLines) {
       int distance = int(random(minLineDistance, maxLineDistance));
       int movement = int(random(maxLineMoveDistance));
       if (axis == X_AXIS) {
-        int coord = int(random(height - distance));
-        lineDimCollection[i][j][1] = coord;
+        // range is from 0 to height
+        lineDimCollection[i][j][1] = int(movement + random(height-distance-movement));
       } else if (axis == Y_AXIS) {
+        // range is from movement to width
         lineDimCollection[i][j][1] = int(movement + random(width-distance-movement));
       }
       lineDimCollection[i][j][2] = distance;
@@ -287,7 +295,8 @@ void createLineDimensions(int numStates, int maxLines) {
 }
 
 void createShapeDimensions(int numStates, int maxShapes) {
-  shapeDimCollection = new int[numStates][maxShapes][5]; // shapetype, x coord, y coord, distance, color index
+  // shapetype, x coord, y coord, distance, distance-movement, color-index, lerp-index
+  shapeDimCollection = new int[numStates][maxShapes][7];
   for (int i = 0; i < numStates; i++) {
     for (int j = 0; j < maxShapes; j++) {
       shapeDimCollection[i][j][0] = int(random(shapeTypes.length)); // shape type
@@ -295,7 +304,9 @@ void createShapeDimensions(int numStates, int maxShapes) {
       shapeDimCollection[i][j][1] = int(random(width - distance));
       shapeDimCollection[i][j][2] = int(random(height - distance));
       shapeDimCollection[i][j][3] = distance;
-      shapeDimCollection[i][j][4] = int(random(shapeColors[i % shapeColors.length].length));
+      shapeDimCollection[i][j][4] = int(random(2*maxShapeGrowth) - maxShapeGrowth);
+      shapeDimCollection[i][j][5] = int(random(shapeColors[i % shapeColors.length].length - 1));
+      shapeDimCollection[i][j][6] = int(random(0, 100));
     }
   }
 }
