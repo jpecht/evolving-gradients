@@ -27,6 +27,9 @@ color[] lightBlue = {color(99,108,134),color(86,98,129),color(75,88,125),color(6
 color[] lightCerulean = {color(89,115,125),color(77,109,120),color(66,103,117),color(54,97,114),color(44,93,112)};
 color[] lightBlend = combineColorArrays(lightCerulean, combineColorArrays(lightPurple, lightBlue));
 
+// custom color palettes (sharper)
+color[] sharpBlue = {color(48,47,112),color(64,63,131),color(84,89,147),color(99,98,168)};
+
 color[] blendColors = combineColorArrays(lowtempCool,midBlend);
 
 
@@ -49,7 +52,7 @@ int maxShapes = 5; // number of shapes to be displayed on screen at a time
 int minShapeSize = 20, maxShapeSize = 100; // diameter of shapes
 int maxShapeGrowth = 0;
 String[] shapeTypes = {"circle", "square"};
-color[][] shapeColors = {lowtempCool, blendColors};
+color[][] shapeColors = {lowtempCool, sharpBlue, lowtempCool, blendColors, lowtempCool};
 color shapeBorderColor = color(50, 50, 50);
 
 // how often color change is occurring
